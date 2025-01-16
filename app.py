@@ -98,7 +98,7 @@ if st.button("Next Question") or st.session_state['question'] is None:
 if st.session_state['question']:
     st.write(st.session_state['question'])
     user_choice = st.radio("Options", st.session_state['options'], key="user_choice")
-    print(f"User Choice = {user_choice}")
+    # print(f"User Choice = {user_choice}")
     if st.button("Submit"):
         if user_choice in st.session_state['correct_option']:
             st.success("Correct!")
