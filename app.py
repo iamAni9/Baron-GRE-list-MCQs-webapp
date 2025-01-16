@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import os
+import json
 # from dotenv import load_dotenv
 
 # load_dotenv()
@@ -50,15 +51,33 @@ def generate_question():
         word_row = current_list.sample(1).iloc[0]
         word, meaning = word_row['Word'], word_row['Meaning']
         prompt = f"""
-        You are helping me to learn the vocabulary. For this you need to create a multiple-choice question based on the following word and its meaning:
-        Word: {word}
-        Meaning: {meaning}
-        
-        The question should ask for the meaning of the word. Provide:
-        1. A question based on the word.
-        2. Four options (one correct and three plausible incorrect options).
-        3. Clearly indicate the correct option.
-        4. Keep the correct option in random order for every question.
+        You are assisting me in learning vocabulary by creating multiple-choice questions. Follow these instructions carefully:
+
+        1. **Word and Meaning**:
+            - Word: {word}
+            - Meaning: {meaning}
+
+        2. **Question**: Create a clear question that asks for the meaning of the word.
+
+        3. **Options**:
+            - Provide four options: one correct answer and three plausible incorrect answers.
+            - Ensure the incorrect options are related but clearly incorrect.
+
+        4. **Correct Option**:
+            - Randomize the placement of the correct option to avoid patterns do not repeat the same option everytime.
+            - Clearly indicate which option is correct.
+
+        5. **Example Output Format**: Provide the question and options in the following JSON structure:
+        {{
+            "question": "What does the word '{word}' mean?",
+            "options": {{
+                "A": "Incorrect option 1",
+                "B": "Correct option",
+                "C": "Incorrect option 2",
+                "D": "Incorrect option 3"
+            }},
+            "correct_option": "B"
+        }}
         """
         
         # Call Groq API
@@ -73,20 +92,27 @@ def generate_question():
 
         # Parse the content to extract the question, options, and correct answer
         lines = result.split("\n")
-        # print(lines)
-        question = lines[2].replace("1. ", "").strip()
-        options = [
-            line.replace("   ", "").strip()
-            for line in lines[5:9]
-        ]
-        correct_option = lines[-1].replace("3. The correct option is: **", "").strip()
 
-        # print(f"Q = {question}")
-        # print(options)
-        # print(correct_option)
+        # Remove empty lines and trim whitespace
+        lines = [line.strip() for line in lines if line.strip()]
+
+        # Extract JSON block
+        json_start = lines.index("```") + 1
+        json_end = lines.index("```", json_start)
+        json_block = "\n".join(lines[json_start:json_end])
+
+        # Parse the JSON
+        data = json.loads(json_block)
+
+        # Extract question, options, and correct option
+        question = data.get("question", "").strip()
+        options = data.get("options", {})
+        correct_option = data.get("correct_option", "").strip()
+        print(correct_option)
+
         # Update the session state
         st.session_state['question'] = question
-        st.session_state['options'] = options
+        st.session_state['options'] = [f"{key}) {value}" for key, value in options.items()]
         st.session_state['correct_option'] = correct_option
     except Exception as e:
         st.error(f"Error generating question: {e}")
@@ -99,9 +125,9 @@ if st.button("Next Question") or st.session_state['question'] is None:
 if st.session_state['question']:
     st.write(st.session_state['question'])
     user_choice = st.radio("Options", st.session_state['options'], key="user_choice")
-    # print(f"User Choice = {user_choice}")
+    print(f"User Choice = {user_choice}")
     if st.button("Submit"):
-        if user_choice in st.session_state['correct_option']:
+        if st.session_state['correct_option']+')' in user_choice:
             st.success("Correct!")
         else:
             st.error(f"Incorrect. The correct answer is: {st.session_state['correct_option']}")
