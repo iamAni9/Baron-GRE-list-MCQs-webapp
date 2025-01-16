@@ -58,6 +58,7 @@ def generate_question():
         1. A question based on the word.
         2. Four options (one correct and three plausible incorrect options).
         3. Clearly indicate the correct option.
+        4. Keep the correct option in random order for every question.
         """
         
         # Call Groq API
