@@ -2,9 +2,9 @@ import streamlit as st
 import pandas as pd
 import os
 import json
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
-load_dotenv()
+# load_dotenv()
 groq_api = os.getenv("GROQ_API_KEY")
 
 st.sidebar.title("Model Selection")
