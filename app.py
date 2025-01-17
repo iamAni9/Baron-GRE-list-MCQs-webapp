@@ -61,7 +61,7 @@ def generate_question():
 
         2. **Question**: 
             - Create a creative and clear question that shows and highlight the word and asks for the meaning of the word.
-            - Also highlight the {word} you are using in question within inverted commas.
+            - Also highlight the {word} you are using in question by making it bold.
         3. **Options**:
             - Provide four options: one correct answer and three plausible incorrect answers.
             - Ensure the incorrect options are related but clearly incorrect.
@@ -71,7 +71,7 @@ def generate_question():
             - Do not repeat the same position everytime. Previous position = {prev_pos}
             - Clearly indicate which option is correct.
 
-        5. **Example Output Format**: Provide the question and options in the following JSON structure:
+        5. **Example Output Format**: Provide the question and options in the following JSON structure and must follow this structure otherwise errors will occur:
             ```
             {{
                 "question": "What does the word '{word}' mean?",
@@ -97,25 +97,45 @@ def generate_question():
             raise ValueError("No 'content' field in the response")
 
         # Parse the content to extract the question, options, and correct answer
-        lines = result.split("\n")
+        lines = [line.strip() for line in result.split("\n") if line.strip()]
         # print(lines)
-        # Remove empty lines and trim whitespace
-        lines = [line.strip() for line in lines if line.strip()]
 
-        # Extract JSON block
-        json_start = lines.index("```") + 1
-        json_end = lines.index("```", json_start)
-        json_block = "\n".join(lines[json_start:json_end])
+        json_block = None
 
-        # Parse the JSON
-        data = json.loads(json_block)
+        # If delimiters are found, extract JSON block using them
+        if "```" in lines:
+            try:
+                json_start = lines.index("```") + 1
+                json_end = lines.index("```", json_start)
+                json_block = "\n".join(lines[json_start:json_end])
+            except ValueError:
+                raise ValueError("JSON block delimiters found, but block extraction failed.")
+        else:
+            # Fallback to detect JSON-like structures in the absence of delimiters
+            try:
+                json_start = next(i for i, line in enumerate(lines) if line.startswith("{"))
+                json_end = next(i for i, line in enumerate(lines[json_start:], start=json_start) if line.endswith("}"))
+                json_block = "\n".join(lines[json_start:json_end + 1])
+            except StopIteration:
+                raise ValueError("JSON block not found within the content.")
+
+        # Sanitize and parse the JSON block
+        sanitized_json = json_block.replace(",\n}", "\n}")  # Remove trailing commas before closing braces
+
+        try:
+            # Parse the sanitized JSON block
+            data = json.loads(sanitized_json)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Error decoding JSON: {e}")
 
         # Extract question, options, and correct option
         question = data.get("question", "").strip()
         options = data.get("options", {})
         correct_option = data.get("correct_option", "").strip()
-        # print(correct_option)
 
+        # print(f"question = {question}")
+        # print(f"options = {options}")
+        # print(f"correct = {correct_option}")
         # Update the session state
         st.session_state['question'] = question
         st.session_state['options'] = [f"{key}) {value}" for key, value in options.items()]
@@ -131,7 +151,7 @@ if st.button("Next Question") or st.session_state['question'] is None:
 if st.session_state['question']:
     st.write(f"{st.session_state['cnt']}. {st.session_state['question']}")
     user_choice = st.radio("Options", st.session_state['options'], key="user_choice")
-    print(f"User Choice = {user_choice}")
+    # print(f"User Choice = {user_choice}")
     if st.button("Submit"):
         st.session_state['cnt'] += 1
         if st.session_state['correct_option']+')' in user_choice:
