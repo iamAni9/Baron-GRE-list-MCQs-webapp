@@ -44,12 +44,14 @@ if 'question' not in st.session_state:
     st.session_state['question'] = None
     st.session_state['options'] = []
     st.session_state['correct_option'] = None
+    st.session_state['cnt'] = 1
 
 # Function to generate a question
 def generate_question():
     try:
         word_row = current_list.sample(1).iloc[0]
         word, meaning = word_row['Word'], word_row['Meaning']
+        prev_pos = st.session_state['correct_option']
         prompt = f"""
         You are assisting me in learning vocabulary by creating multiple-choice questions. Follow these instructions carefully:
 
@@ -57,27 +59,31 @@ def generate_question():
             - Word: {word}
             - Meaning: {meaning}
 
-        2. **Question**: Create a clear question that asks for the meaning of the word.
-
+        2. **Question**: 
+            - Create a creative and clear question that shows and highlight the word and asks for the meaning of the word.
+            - Also highlight the {word} you are using in question within inverted commas.
         3. **Options**:
             - Provide four options: one correct answer and three plausible incorrect answers.
             - Ensure the incorrect options are related but clearly incorrect.
 
         4. **Correct Option**:
-            - Randomize the placement of the correct option to avoid patterns do not repeat the same option everytime.
+            - Randomize the placement of the correct option among A, B, C, D to avoid patterns. 
+            - Do not repeat the same position everytime. Previous position = {prev_pos}
             - Clearly indicate which option is correct.
 
         5. **Example Output Format**: Provide the question and options in the following JSON structure:
-        {{
-            "question": "What does the word '{word}' mean?",
-            "options": {{
-                "A": "Incorrect option 1",
-                "B": "Correct option",
-                "C": "Incorrect option 2",
-                "D": "Incorrect option 3"
-            }},
-            "correct_option": "B"
-        }}
+            ```
+            {{
+                "question": "What does the word '{word}' mean?",
+                "options": {{
+                    "A": "option 1",
+                    "B": "option 2",
+                    "C": "option 3",
+                    "D": "option 4"
+                }},
+                "correct_option": "B"
+            }}
+            ```
         """
         
         # Call Groq API
@@ -92,7 +98,7 @@ def generate_question():
 
         # Parse the content to extract the question, options, and correct answer
         lines = result.split("\n")
-
+        print(lines)
         # Remove empty lines and trim whitespace
         lines = [line.strip() for line in lines if line.strip()]
 
@@ -108,7 +114,7 @@ def generate_question():
         question = data.get("question", "").strip()
         options = data.get("options", {})
         correct_option = data.get("correct_option", "").strip()
-        print(correct_option)
+        # print(correct_option)
 
         # Update the session state
         st.session_state['question'] = question
@@ -123,10 +129,11 @@ if st.button("Next Question") or st.session_state['question'] is None:
 
 # Display question and options
 if st.session_state['question']:
-    st.write(st.session_state['question'])
+    st.write(f"{st.session_state['cnt']}. {st.session_state['question']}")
     user_choice = st.radio("Options", st.session_state['options'], key="user_choice")
     print(f"User Choice = {user_choice}")
     if st.button("Submit"):
+        st.session_state['cnt'] += 1
         if st.session_state['correct_option']+')' in user_choice:
             st.success("Correct!")
         else:
