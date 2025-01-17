@@ -143,9 +143,20 @@ def generate_question():
     except Exception as e:
         st.error(f"Error generating question: {e}")
 
-# Generate question on load or when 'Next Question' is clicked
-if st.button("Next Question") or st.session_state['question'] is None:
+# Initialize session state for button text
+if "button_text" not in st.session_state:
+    st.session_state["button_text"] = "Start"
+
+# Function to handle button click
+def handle_button_click():
+    if st.session_state["button_text"] == "Start":
+        st.session_state["button_text"] = "Next Question"
     generate_question()
+
+# Display the button with dynamic text
+if st.button(st.session_state["button_text"]):
+    handle_button_click()
+
 
 # Display question and options
 if st.session_state['question']:
