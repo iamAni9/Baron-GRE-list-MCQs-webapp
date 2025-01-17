@@ -98,7 +98,7 @@ def generate_question():
 
         # Parse the content to extract the question, options, and correct answer
         lines = result.split("\n")
-        print(lines)
+        # print(lines)
         # Remove empty lines and trim whitespace
         lines = [line.strip() for line in lines if line.strip()]
 
