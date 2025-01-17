@@ -2,10 +2,14 @@ import streamlit as st
 import pandas as pd
 import os
 import json
-# from dotenv import load_dotenv
+from dotenv import load_dotenv
 
-# load_dotenv()
+load_dotenv()
 groq_api = os.getenv("GROQ_API_KEY")
+
+st.sidebar.title("Model Selection")
+available_models = ["llama-3.3-70b-versatile", "llama-3.2-1b-preview", "llama-3.2-3b-preview", "llama-3.1-70b-versatile", "llama3-70b-8192", "llama3-8b-8192"]
+selected_model = st.sidebar.selectbox("Select Model", options=available_models)
 
 # Load word lists
 @st.cache_data
@@ -31,7 +35,7 @@ try:
 except Exception as e:
     st.error(f"Import Error: {e}")
 
-llm = ChatGroq(groq_api_key=groq_api, model_name="llama-3.3-70b-versatile")
+llm = ChatGroq(groq_api_key=groq_api, model_name=selected_model)
 
 # App UI
 st.title("Baron Sheet MCQ Practice")
@@ -53,25 +57,20 @@ def generate_question():
         word, meaning = word_row['Word'], word_row['Meaning']
         prev_pos = st.session_state['correct_option']
         prompt = f"""
-        You are assisting me in learning vocabulary by creating multiple-choice questions. Follow these instructions carefully:
+        You are creating vocabulary-based multiple-choice questions. Follow these steps:
 
         1. **Word and Meaning**:
             - Word: {word}
             - Meaning: {meaning}
 
-        2. **Question**: 
-            - Create a creative and clear question that shows and highlight the word and asks for the meaning of the word.
-            - Also highlight the {word} you are using in question by making it bold.
+        2. **Question**:
+            - Write a creative question highlighting the word **{word}** and ask for its meaning.
+
         3. **Options**:
-            - Provide four options: one correct answer and three plausible incorrect answers.
-            - Ensure the incorrect options are related but clearly incorrect.
+            - Provide four options: one correct and three plausible but incorrect.
+            - Ensure the correct answer is randomized (not in position {prev_pos} again).
 
-        4. **Correct Option**:
-            - Randomize the placement of the correct option among A, B, C, D to avoid patterns. 
-            - Do not repeat the same position everytime. Previous position = {prev_pos}
-            - Clearly indicate which option is correct.
-
-        5. **Example Output Format**: Provide the question and options in the following JSON structure and must follow this structure otherwise errors will occur:
+        4. **Example Output Format**: Provide the question and options in the following JSON structure and must follow this structure otherwise errors will occur:
             ```
             {{
                 "question": "What does the word '{word}' mean?",
