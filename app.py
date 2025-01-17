@@ -39,6 +39,7 @@ llm = ChatGroq(groq_api_key=groq_api, model_name=selected_model)
 
 # App UI
 st.title("Baron Sheet MCQ Practice")
+st.caption(f"Current model: {selected_model}")
 if "list_choice" not in st.session_state:
     st.session_state["list_choice"] = "ALL"
 list_choice = st.selectbox("Select Word List", options=list(word_lists.keys()))
