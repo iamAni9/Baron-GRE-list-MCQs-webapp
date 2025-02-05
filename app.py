@@ -8,7 +8,7 @@ import json
 groq_api = os.getenv("GROQ_API_KEY")
 
 st.sidebar.title("Model Selection")
-available_models = ["llama-3.3-70b-versatile", "llama-3.2-1b-preview", "llama-3.2-3b-preview", "llama-3.1-70b-versatile", "llama3-70b-8192", "llama3-8b-8192"]
+available_models = ["deepseek-r1-distill-llama-70b", "llama-3.3-70b-versatile", "llama-3.2-1b-preview", "llama-3.2-3b-preview", "llama-3.1-70b-versatile", "llama3-70b-8192", "llama3-8b-8192"]
 selected_model = st.sidebar.selectbox("Select Model", options=available_models)
 
 # Load word lists
